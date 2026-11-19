@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { tidb } from '@/lib/tidb';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,16 +21,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify current password
-    const isCurrentValid = db.verifyAdminPassword(currentPassword);
-    if (!isCurrentValid) {
+    // Verify current password directly from TiDB (source of truth)
+    const storedPassword = await tidb.getAdminPassword();
+    if (currentPassword !== storedPassword) {
       return NextResponse.json(
         { success: false, error: 'Current password does not match existing records' },
         { status: 401 }
       );
     }
 
-    db.setAdminPassword(newPassword);
+    // Save new password directly to TiDB
+    await tidb.setAdminPassword(newPassword);
 
     return NextResponse.json({
       success: true,

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { tidb } from '@/lib/tidb';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +14,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const isValid = db.verifyAdminPassword(password);
+    // Always verify against TiDB (source of truth) so password changes persist across cold starts
+    const storedPassword = await tidb.getAdminPassword();
+    const isValid = password === storedPassword;
     if (!isValid) {
       return NextResponse.json(
         { success: false, error: 'Invalid campaign credentials. Please verify your password.' },

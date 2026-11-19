@@ -198,4 +198,28 @@ export const tidb = {
       [JSON.stringify(settings)]
     );
   },
+
+  // Password helpers – always read/write from TiDB (source of truth)
+  async getAdminPassword(): Promise<string> {
+    try {
+      const settings = await this.getSettings();
+      if (settings && settings.adminPassword) {
+        return settings.adminPassword;
+      }
+    } catch (e) {
+      console.warn('[TiDB] getAdminPassword fallback to default:', e);
+    }
+    return 'cpa2026';
+  },
+
+  async setAdminPassword(newPassword: string): Promise<void> {
+    let settings: SystemSettings | null = null;
+    try {
+      settings = await this.getSettings();
+    } catch (e) {
+      console.warn('[TiDB] getSettings error in setAdminPassword:', e);
+    }
+    const merged = { ...(settings || {}), adminPassword: newPassword } as SystemSettings;
+    await this.saveSettings(merged);
+  },
 };

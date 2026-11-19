@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { tidb } from '@/lib/tidb';
 import { normalizeKenyanPhone } from '@/lib/phone';
+import { Supporter } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +15,21 @@ export async function GET(request: Request) {
     const consent = searchParams.get('consent');
     const status = searchParams.get('status') || '';
 
-    let supporters = db.getSupporters();
+    // Always fetch from TiDB first (source of truth - survives cold starts)
+    let supporters: Supporter[] = [];
+    try {
+      supporters = await tidb.getSupporters();
+      // Also hydrate in-memory cache so other local ops stay consistent
+      supporters.forEach(s => {
+        const existing = db.getSupporterById(s.id);
+        if (!existing) {
+          db.addSupporterToMemory?.(s);
+        }
+      });
+    } catch (tidbErr) {
+      console.warn('[TiDB] getSupporters failed, falling back to local store:', tidbErr);
+      supporters = db.getSupporters();
+    }
 
     if (search) {
       supporters = supporters.filter(
@@ -94,30 +110,67 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = db.addSupporter({
-      fullName: fullName.trim(),
-      phoneNumber: phoneValidation.normalized,
+    // Check duplicates directly in TiDB (source of truth)
+    let allSupporters: Supporter[] = [];
+    try {
+      allSupporters = await tidb.getSupporters();
+    } catch (e) {
+      console.warn('[TiDB] getSupporters failed during duplicate check, using local:', e);
+      allSupporters = db.getSupporters();
+    }
+
+    const normalizedPhone = phoneValidation.normalized;
+    const trimmedName = fullName.trim().toUpperCase();
+
+    const phoneExists = allSupporters.find(s => s.phoneNumber === normalizedPhone);
+    if (phoneExists) {
+      return NextResponse.json(
+        { success: false, error: `A supporter with phone number ${normalizedPhone} is already registered (${phoneExists.fullName}).` },
+        { status: 409 }
+      );
+    }
+
+    // Name duplicate check (token-based)
+    const nameExists = allSupporters.find(s => {
+      const a = s.fullName.trim().toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+      const b = trimmedName.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+      return a === b;
+    });
+    if (nameExists) {
+      return NextResponse.json(
+        { success: false, error: `A student named "${nameExists.fullName}" is already in the supporters register. Already-listed students cannot register again.` },
+        { status: 409 }
+      );
+    }
+
+    const newId = `sup_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const newRecord: Supporter = {
+      id: newId,
+      fullName: trimmedName,
+      phoneNumber: normalizedPhone,
       rawPhone: rawPhone || phoneValidation.formatted,
       course: course.trim(),
       yearOfStudy: yearOfStudy.trim(),
       communicationConsent: Boolean(communicationConsent),
       consentTimestamp: new Date().toISOString(),
+      registrationDate: new Date().toISOString(),
       status: 'active',
       source: 'Online Supporter Portal',
-    });
+    };
 
-    if (result.error) {
-      return NextResponse.json(
-        { success: false, error: result.error },
-        { status: 409 } // Conflict
-      );
-    }
+    // Write to TiDB first (persistent) — this NEVER throws EROFS
+    await tidb.addSupporter(newRecord);
+
+    // Also update in-memory local store (best-effort, may fail on EROFS which is fine)
+    try {
+      db.addSupporterToMemory?.(newRecord);
+    } catch (_) { /* ignore local store errors */ }
 
     return NextResponse.json(
       {
         success: true,
         message: 'Registration successful! Thank you for joining the campaign community.',
-        supporter: result.supporter,
+        supporter: newRecord,
       },
       { status: 201 }
     );

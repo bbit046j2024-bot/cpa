@@ -363,6 +363,16 @@ export const db = {
     return true;
   },
 
+  // Add a supporter directly to memory cache (called by API routes after TiDB write)
+  addSupporterToMemory(supporter: Supporter): void {
+    const data = initDb();
+    const exists = data.supporters.find(s => s.id === supporter.id);
+    if (!exists) {
+      data.supporters.unshift(supporter);
+      saveDb(data);
+    }
+  },
+
   bulkAddSupporters(items: Array<Omit<Supporter, 'id' | 'registrationDate'>>, actorId: string = 'admin'): { addedCount: number; duplicateCount: number; errors: string[] } {
     const data = initDb();
     let addedCount = 0;

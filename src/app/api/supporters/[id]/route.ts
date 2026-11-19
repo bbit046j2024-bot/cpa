@@ -16,7 +16,12 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Supporter ID is required' }, { status: 400 });
     }
 
-    const supporter = db.getSupporterById(id);
+    // Try local cache first, then TiDB
+    let supporter = db.getSupporterById(id);
+    if (!supporter) {
+      const all = await tidb.getSupporters().catch(() => []);
+      supporter = all.find(s => s.id === id);
+    }
     if (!supporter) {
       return NextResponse.json({ success: false, error: 'Supporter not found' }, { status: 404 });
     }
@@ -51,8 +56,11 @@ export async function PUT(
       body.rawPhone = val.formatted;
     }
 
-    const updated = db.updateSupporter(id, body, body.actorId || 'admin');
+    // Update in TiDB first (source of truth)
     await tidb.updateSupporter(id, body).catch(err => console.error('[TiDB Update Error]:', err));
+
+    // Then update local cache
+    const updated = db.updateSupporter(id, body, body.actorId || 'admin');
 
     return NextResponse.json({ success: true, supporter: updated });
   } catch (error: unknown) {
@@ -75,9 +83,11 @@ export async function DELETE(
     const { searchParams } = new URL(request.url);
     const actorId = searchParams.get('actorId') || 'admin';
 
-    // Delete from TiDB Cloud and local store
-    await tidb.deleteSupporter(id).catch(err => console.error('[TiDB Delete Error]:', err));
-    const deleted = db.deleteSupporter(id, actorId);
+    // Delete from TiDB first (source of truth - always works, no EROFS)
+    await tidb.deleteSupporter(id);
+
+    // Also remove from local in-memory cache (best-effort)
+    db.deleteSupporter(id, actorId);
 
     return NextResponse.json({ success: true, message: 'Supporter record deleted successfully' });
   } catch (error: unknown) {
