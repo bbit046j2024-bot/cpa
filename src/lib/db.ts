@@ -21,7 +21,6 @@ interface DatabaseSchema {
 }
 
 const isServerless = process.env.VERCEL === '1' || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME);
-const BUNDLED_DB_FILE = path.join(process.cwd(), 'data', 'store.json');
 const DATA_DIR = isServerless ? path.join('/tmp', 'cpa-data') : path.join(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'store.json');
 
@@ -175,7 +174,7 @@ function initDb(): DatabaseSchema {
     return memoryDb;
   }
 
-  // 1. Try reading from active DB_FILE
+  // Try reading from active DB_FILE (local dev or /tmp on serverless)
   if (fs.existsSync(DB_FILE)) {
     try {
       const content = fs.readFileSync(DB_FILE, 'utf-8');
@@ -189,21 +188,7 @@ function initDb(): DatabaseSchema {
     }
   }
 
-  // 2. If in serverless and /tmp DB_FILE does not exist, try bundled store.json
-  if (isServerless && fs.existsSync(BUNDLED_DB_FILE)) {
-    try {
-      const content = fs.readFileSync(BUNDLED_DB_FILE, 'utf-8');
-      const data: DatabaseSchema = JSON.parse(content);
-      if (data.supporters && data.supporters.length > 0) {
-        memoryDb = data;
-        saveDb(data);
-        return data;
-      }
-    } catch (e) {
-      console.warn('Error reading bundled DB file:', e);
-    }
-  }
-
+  // Cold start: initialise with seed supporters (TiDB is authoritative — API routes fetch from TiDB directly)
   const initialData: DatabaseSchema = {
     supporters: (seedSupporters as unknown) as Supporter[],
     activities: DEFAULT_ACTIVITIES,

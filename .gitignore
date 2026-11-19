@@ -30,3 +30,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local JSON database (TiDB Cloud is source of truth — never commit store.json)
+data/store.json
