@@ -1,0 +1,503 @@
+{
+  "supporters": [
+    {
+      "fullName": "ELISHA ADERA",
+      "phoneNumber": "+254797844540",
+      "rawPhone": "0797844540",
+      "course": "Diploma in Logistics and Transport Management",
+      "yearOfStudy": "Year 1",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-18T22:45:53.566Z",
+      "status": "active",
+      "source": "Online Supporter Portal",
+      "id": "sup_1795041953571_a4ia",
+      "registrationDate": "2026-11-18T22:45:53.571Z"
+    },
+    {
+      "fullName": "Amina Hassan Mwangi",
+      "phoneNumber": "+254722123456",
+      "rawPhone": "0722 123 456",
+      "course": "Bachelor of Business and Information Technology",
+      "yearOfStudy": "Year 2",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-18T21:40:50.161Z",
+      "status": "active",
+      "source": "Online Supporter Portal",
+      "id": "sup_1795038050164_0947",
+      "registrationDate": "2026-11-18T21:40:50.164Z"
+    },
+    {
+      "id": "sup_001",
+      "fullName": "Young Jang",
+      "phoneNumber": "+254706510069",
+      "rawPhone": "0706 510 069",
+      "course": "Bachelor of Business and Information Technology",
+      "yearOfStudy": "Year 1",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_002",
+      "fullName": "Lawrence Oketch",
+      "phoneNumber": "+254119154380",
+      "rawPhone": "0119 154 380",
+      "course": "Bachelor of Science in Supply Chain Management",
+      "yearOfStudy": "Year 3",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_003",
+      "fullName": "Kelly Victor",
+      "phoneNumber": "+254714423133",
+      "rawPhone": "0714 423 133",
+      "course": "Diploma in Supply Chain Management",
+      "yearOfStudy": "Year 1",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_004",
+      "fullName": "McWilliam Menge",
+      "phoneNumber": "+254792433523",
+      "rawPhone": "0792 433 523",
+      "course": "Bachelor of Business and Information Technology",
+      "yearOfStudy": "Year 3",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_005",
+      "fullName": "Abdijabar Hussein",
+      "phoneNumber": "+254115884644",
+      "rawPhone": "0115 884 644",
+      "course": "Diploma in Logistics and Transport Management",
+      "yearOfStudy": "Year 1",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_006",
+      "fullName": "Brian Nyakundi",
+      "phoneNumber": "+254701302281",
+      "rawPhone": "0701 302 281",
+      "course": "Bachelor of Science in Supply Chain Management",
+      "yearOfStudy": "Year 3",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_007",
+      "fullName": "Khadija Abdulmalik",
+      "phoneNumber": "+254112697688",
+      "rawPhone": "0112 697 688",
+      "course": "Bachelor of Science in Supply Chain Management",
+      "yearOfStudy": "Year 1",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_008",
+      "fullName": "Daniel Amaheno",
+      "phoneNumber": "+254118942519",
+      "rawPhone": "0118 942 519",
+      "course": "Bachelor of Business and Information Technology",
+      "yearOfStudy": "Year 3",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_009",
+      "fullName": "Hanaa Ahmed",
+      "phoneNumber": "+254774052990",
+      "rawPhone": "0774 052 990",
+      "course": "Bachelor of Science in Supply Chain Management",
+      "yearOfStudy": "Year 1",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_010",
+      "fullName": "Marcus Irumba",
+      "phoneNumber": "+254752244494",
+      "rawPhone": "0752 244 494",
+      "course": "Diploma in Supply Chain Management",
+      "yearOfStudy": "Year 3",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_011",
+      "fullName": "Meja Grace",
+      "phoneNumber": "+254797601866",
+      "rawPhone": "0797 601 866",
+      "course": "Bachelor of Business and Information Technology",
+      "yearOfStudy": "Year 1",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_012",
+      "fullName": "Ouko Priscah Alice (Achieng)",
+      "phoneNumber": "+254713036168",
+      "rawPhone": "0713 036 168",
+      "course": "Diploma in Logistics and Transport Management",
+      "yearOfStudy": "Year 3",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_013",
+      "fullName": "Helena Gwito",
+      "phoneNumber": "+254703909549",
+      "rawPhone": "0703 909 549",
+      "course": "Bachelor of Science in Supply Chain Management",
+      "yearOfStudy": "Year 1",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_014",
+      "fullName": "Antonia Kikenyi",
+      "phoneNumber": "+254705255251",
+      "rawPhone": "0705 255 251",
+      "course": "Bachelor of Science in Supply Chain Management",
+      "yearOfStudy": "Year 3",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_015",
+      "fullName": "Esther Wanjiru",
+      "phoneNumber": "+254113835508",
+      "rawPhone": "0113 835 508",
+      "course": "Bachelor of Business and Information Technology",
+      "yearOfStudy": "Year 1",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_016",
+      "fullName": "Samson Banda",
+      "phoneNumber": "+254742717621",
+      "rawPhone": "0742 717 621",
+      "course": "Bachelor of Science in Supply Chain Management",
+      "yearOfStudy": "Year 3",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_017",
+      "fullName": "Churchil Lardo",
+      "phoneNumber": "+254781350032",
+      "rawPhone": "0781 350 032",
+      "course": "Diploma in Supply Chain Management",
+      "yearOfStudy": "Year 1",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_018",
+      "fullName": "Enock Numo",
+      "phoneNumber": "+254769976688",
+      "rawPhone": "0769 976 688",
+      "course": "Bachelor of Business and Information Technology",
+      "yearOfStudy": "Year 3",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_019",
+      "fullName": "Jakes Mwendwa",
+      "phoneNumber": "+254768263997",
+      "rawPhone": "0768 263 997",
+      "course": "Diploma in Logistics and Transport Management",
+      "yearOfStudy": "Year 1",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_020",
+      "fullName": "Cecilia Muthei",
+      "phoneNumber": "+254781854325",
+      "rawPhone": "0781 854 325",
+      "course": "Bachelor of Science in Supply Chain Management",
+      "yearOfStudy": "Year 3",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_021",
+      "fullName": "Kelvin Muchangi",
+      "phoneNumber": "+254746395532",
+      "rawPhone": "0746 395 532",
+      "course": "Bachelor of Science in Supply Chain Management",
+      "yearOfStudy": "Year 1",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_022",
+      "fullName": "Virginiah",
+      "phoneNumber": "+254794313453",
+      "rawPhone": "0794 313 453",
+      "course": "Bachelor of Business and Information Technology",
+      "yearOfStudy": "Year 3",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_023",
+      "fullName": "Slotrack",
+      "phoneNumber": "+254743364189",
+      "rawPhone": "0743 364 189",
+      "course": "Bachelor of Science in Supply Chain Management",
+      "yearOfStudy": "Year 1",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_024",
+      "fullName": "Benjamin",
+      "phoneNumber": "+254708329477",
+      "rawPhone": "0708 329 477",
+      "course": "Diploma in Supply Chain Management",
+      "yearOfStudy": "Year 3",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    },
+    {
+      "id": "sup_025",
+      "fullName": "Solomon Orwaru",
+      "phoneNumber": "+254791259765",
+      "rawPhone": "0791 259 765",
+      "course": "Bachelor of Business and Information Technology",
+      "yearOfStudy": "Year 1",
+      "communicationConsent": true,
+      "consentTimestamp": "2026-11-09T14:30:00.000Z",
+      "registrationDate": "2026-11-09T14:30:00.000Z",
+      "status": "active",
+      "source": "Initial Loyalty Register"
+    }
+  ],
+  "activities": [
+    {
+      "id": "act_001",
+      "title": "Departmental Comrades Town Hall",
+      "description": "Direct interactive engagement with 3rd & 4th year Management Science students regarding student representation and delegate priorities.",
+      "date": "2026-11-24",
+      "time": "16:00",
+      "venue": "Business Studies Complex Hall A (BSC A)",
+      "status": "upcoming",
+      "category": "hall_meeting",
+      "targetAudience": "All Management Science Comrades",
+      "createdBy": "admin"
+    },
+    {
+      "id": "act_002",
+      "title": "CPA Campaign Strategy & Mobilization Meeting",
+      "description": "Alignment session for course coordinators and volunteer mobilizers across all four academic years.",
+      "date": "2026-11-21",
+      "time": "17:30",
+      "venue": "Student Center Conference Room 2",
+      "status": "upcoming",
+      "category": "strategy",
+      "targetAudience": "Campaign Coordinators & Mobilizers",
+      "createdBy": "admin"
+    },
+    {
+      "id": "act_003",
+      "title": "Year 1 & 2 Lecture Hall Briefing Walk-ins",
+      "description": "Informative 5-minute introductory sessions in lecture halls during class breaks to explain the delegate election process.",
+      "date": "2026-11-17",
+      "time": "10:00",
+      "venue": "Lecture Theatres 3 & 4",
+      "status": "completed",
+      "attendanceCount": 140,
+      "category": "outreach",
+      "targetAudience": "Year 1 & Year 2 Students",
+      "createdBy": "admin"
+    }
+  ],
+  "updates": [
+    {
+      "id": "upd_001",
+      "title": "Official Campaign Launch: The Journey Begins",
+      "content": "Comrades of Management Science, our journey towards accountable and competent leadership is officially underway. Stand with Elisha Adera for Super Delegate 2026/2027 under CPA - For Comrades by Comrades.",
+      "date": "2026-11-10",
+      "category": "announcement",
+      "pinned": true
+    },
+    {
+      "id": "upd_002",
+      "title": "Supporter Registration Portal is Live",
+      "content": "We invite all students within the Department of Management Science to join our verified supporters directory. Registration takes only 30 seconds and requires only 4 essential fields.",
+      "date": "2026-11-12",
+      "category": "message",
+      "pinned": true
+    },
+    {
+      "id": "upd_003",
+      "title": "Town Hall Meeting Scheduled for Nov 24",
+      "content": "Join Elisha Adera and the CPA leadership team this coming Tuesday at BSC Hall A from 4:00 PM for an open forum dialogue on student academic welfare.",
+      "date": "2026-11-18",
+      "category": "event",
+      "pinned": false
+    }
+  ],
+  "communications": [],
+  "users": [
+    {
+      "id": "usr_admin",
+      "name": "Campaign Administrator",
+      "username": "admin",
+      "role": "admin",
+      "createdAt": "2026-11-01T00:00:00.000Z"
+    },
+    {
+      "id": "usr_coordinator",
+      "name": "Department Mobilizer",
+      "username": "coordinator",
+      "role": "coordinator",
+      "createdAt": "2026-11-05T00:00:00.000Z"
+    },
+    {
+      "id": "usr_dataentry",
+      "name": "Data Entry Volunteer",
+      "username": "dataentry",
+      "role": "data_entry",
+      "createdAt": "2026-11-08T00:00:00.000Z"
+    }
+  ],
+  "settings": {
+    "candidateName": "Elisha Adera",
+    "position": "Super Delegate",
+    "department": "Department of Management Science",
+    "institution": "Technical University of Mombasa (TUM)",
+    "campaignPeriod": "2026/2027",
+    "allianceName": "CPA – Comrades Project Alliance",
+    "allianceMotto": "For Comrades by Comrades",
+    "slogan": "Competent Leader",
+    "availableCourses": [
+      "Bachelor of Business and Information Technology",
+      "Bachelor of Science in Supply Chain Management",
+      "Diploma in Logistics and Transport Management",
+      "Diploma in Procurement",
+      "Diploma in Supply Chain Management",
+      "International Diploma in Logistics and Transport Management",
+      "Certificate in Stores Management",
+      "Certificate of Logistics and Transport Management",
+      "Master of Business Information Systems",
+      "Master of Science in Supply Chain Management",
+      "Masters of Science in Procurement and Supply Chain Management",
+      "Doctor of Philosophy in Supply Chain Management"
+    ],
+    "academicYears": [
+      "Year 1",
+      "Year 2",
+      "Year 3",
+      "Year 4"
+    ],
+    "smsProvider": {
+      "enabled": false,
+      "providerName": "africastalking",
+      "senderId": "ELISHA2026",
+      "approvalStatus": "pending_election_clearance"
+    }
+  },
+  "auditLogs": [
+    {
+      "id": "log_1795041953571",
+      "timestamp": "2026-11-18T22:45:53.571Z",
+      "userId": "public_portal",
+      "action": "REGISTER_SUPPORTER",
+      "details": "Registered ELISHA ADERA (+254797844540) for Bsc. Logistics & Transport Management"
+    },
+    {
+      "id": "log_1795038050164",
+      "timestamp": "2026-11-18T21:40:50.164Z",
+      "userId": "public_portal",
+      "action": "REGISTER_SUPPORTER",
+      "details": "Registered Amina Hassan Mwangi (+254722123456) for Bachelor of Commerce"
+    },
+    {
+      "id": "log_001",
+      "timestamp": "2026-11-18T21:39:33.161Z",
+      "userId": "system",
+      "action": "INITIAL_SEED",
+      "details": "Seeded 25 registered supporters from official docx loyalty register"
+    }
+  ]
+}
