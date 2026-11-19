@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { sendBulkSms } from '@/lib/sms';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
     const communications = db.getCommunications();
     const settings = db.getSettings();
-    return NextResponse.json({ success: true, communications, smsSettings: settings.smsProvider });
+    return NextResponse.json({
+      success: true,
+      communications,
+      smsSettings: settings.smsProvider,
+    });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Server error';
     return NextResponse.json({ success: false, error: message }, { status: 500 });
@@ -18,11 +25,16 @@ export async function POST(request: Request) {
     const { title, message, channel, targetCourse, targetYear, createdBy } = body;
 
     if (!title || !message) {
-      return NextResponse.json({ success: false, error: 'Title and message are required' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Title and message are required' },
+        { status: 400 }
+      );
     }
 
-    // Determine consented recipient count
-    let eligibleSupporters = db.getSupporters().filter((s) => s.communicationConsent && s.status === 'active');
+    // Determine consented recipient count (ONLY consented and active supporters)
+    let eligibleSupporters = db
+      .getSupporters()
+      .filter((s) => s.communicationConsent && s.status === 'active');
 
     if (targetCourse && targetCourse !== 'all') {
       eligibleSupporters = eligibleSupporters.filter((s) => s.course === targetCourse);
@@ -32,29 +44,17 @@ export async function POST(request: Request) {
       eligibleSupporters = eligibleSupporters.filter((s) => s.yearOfStudy === targetYear);
     }
 
-    const settings = db.getSettings();
+    const recipientPhones = eligibleSupporters
+      .map((s) => s.phoneNumber)
+      .filter(Boolean);
 
-    // If channel is SMS and provider is not approved/enabled
-    if (channel === 'sms' && !settings.smsProvider.enabled) {
-      // Save as draft with compliant explanation
-      const comm = db.addCommunication({
-        title,
-        message,
-        channel: 'sms',
-        targetCourse: targetCourse || 'all',
-        targetYear: targetYear || 'all',
-        recipientCount: eligibleSupporters.length,
-        status: 'draft',
-        createdBy: createdBy || 'admin',
-      });
+    let dispatchResult = null;
 
-      return NextResponse.json({
-        success: true,
-        message: 'Communication drafted successfully. SMS provider requires electoral platform clearance before direct live dispatch.',
-        communication: comm,
-        warning: 'SMS provider currently in sandbox/pending clearance mode.',
-      });
+    if (channel === 'sms' && recipientPhones.length > 0) {
+      dispatchResult = await sendBulkSms(recipientPhones, message);
     }
+
+    const status = channel === 'sms' && dispatchResult && !dispatchResult.success ? 'draft' : 'sent';
 
     const comm = db.addCommunication({
       title,
@@ -63,15 +63,21 @@ export async function POST(request: Request) {
       targetCourse: targetCourse || 'all',
       targetYear: targetYear || 'all',
       recipientCount: eligibleSupporters.length,
-      status: 'sent',
-      sentAt: new Date().toISOString(),
+      status,
+      sentAt: status === 'sent' ? new Date().toISOString() : undefined,
       createdBy: createdBy || 'admin',
     });
 
-    return NextResponse.json({ success: true, communication: comm }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        communication: comm,
+        dispatchResult,
+      },
+      { status: 201 }
+    );
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Server error';
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
-

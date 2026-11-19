@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { Supporter, CampaignActivity, CampaignUpdate, CommunicationMessage, SystemSettings, User } from './types';
 import seedSupporters from '../data/seed-supporters.json';
+import { tidb } from './tidb';
 
 interface DatabaseSchema {
   supporters: Supporter[];
@@ -236,6 +237,7 @@ export const db = {
     });
 
     saveDb(data);
+    tidb.addSupporter(newRecord).catch((err) => console.error('[TiDB Sync Error]:', err.message));
     return { supporter: newRecord };
   },
 
@@ -254,6 +256,7 @@ export const db = {
     });
 
     saveDb(data);
+    tidb.updateSupporter(id, updates).catch((err) => console.error('[TiDB Sync Error]:', err.message));
     return data.supporters[index];
   },
 
@@ -272,6 +275,7 @@ export const db = {
     });
 
     saveDb(data);
+    tidb.deleteSupporter(id).catch((err) => console.error('[TiDB Sync Error]:', err.message));
     return true;
   },
 
@@ -330,6 +334,7 @@ export const db = {
       details: `Created campaign activity: ${newActivity.title}`
     });
     saveDb(data);
+    tidb.addActivity(newActivity).catch((err) => console.error('[TiDB Sync Error]:', err.message));
     return newActivity;
   },
 
@@ -379,6 +384,7 @@ export const db = {
     };
     data.communications.unshift(newComm);
     saveDb(data);
+    tidb.addCommunication(newComm).catch((err) => console.error('[TiDB Sync Error]:', err.message));
     return newComm;
   },
 
@@ -391,6 +397,7 @@ export const db = {
     const data = initDb();
     data.settings = { ...data.settings, ...settings };
     saveDb(data);
+    tidb.saveSettings(data.settings).catch((err) => console.error('[TiDB Sync Error]:', err.message));
     return data.settings;
   },
 
