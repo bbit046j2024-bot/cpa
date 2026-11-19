@@ -432,11 +432,23 @@ export default function CommunicationsPage() {
                   {comm.message}
                 </p>
 
-                <div className="flex items-center justify-between text-xs text-campaign-muted pt-1">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-campaign-muted pt-1">
                   <span>Recipients: <strong>{comm.recipientCount}</strong> consented comrades</span>
-                  <span className={`font-semibold capitalize ${comm.status === 'sent' ? 'text-green-600' : 'text-amber-600'}`}>
-                    Status: {comm.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {comm.channel === 'whatsapp' && (
+                      <a
+                        href={`https://wa.me/?text=${encodeURIComponent(comm.message)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg text-[11px] font-bold shadow-xs transition-colors"
+                      >
+                        <span>Share on WhatsApp</span>
+                      </a>
+                    )}
+                    <span className={`font-semibold capitalize ${comm.status === 'sent' ? 'text-green-600' : 'text-amber-600'}`}>
+                      Status: {comm.status}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))
