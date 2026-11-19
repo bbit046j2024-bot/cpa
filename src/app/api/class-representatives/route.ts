@@ -12,6 +12,16 @@ export async function OPTIONS(request: Request) {
   return classRepPreflight(request);
 }
 
+export async function GET(request: Request) {
+  return NextResponse.json({
+    success: true,
+    service: 'CPA Class Representative Registration API',
+    status: 'online',
+    acceptedMethods: ['POST', 'OPTIONS'],
+    message: 'This API endpoint accepts registration form submissions via POST from authorized campaign portals.',
+  });
+}
+
 export async function POST(request: Request) {
   const origin = getAllowedClassRepOrigin(request);
   if (!origin) {
