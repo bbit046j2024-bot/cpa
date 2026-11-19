@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Users,
+  UserCheck,
   MessageSquare,
   Calendar,
   BarChart3,
@@ -29,6 +30,7 @@ interface UserSession {
 const navItems = [
   { label: 'Dashboard',         href: '/admin',                icon: LayoutDashboard, group: 'main' },
   { label: 'Supporters',        href: '/admin/supporters',     icon: Users,           group: 'main' },
+  { label: 'Class Rep Review',   href: '/admin/class-representatives', icon: UserCheck, group: 'main' },
   { label: 'Communications',    href: '/admin/communications', icon: MessageSquare,   group: 'main' },
   { label: 'Activities',        href: '/admin/activities',     icon: Calendar,        group: 'main' },
   { label: 'Reports',           href: '/admin/reports',        icon: BarChart3,       group: 'tools' },
@@ -39,6 +41,7 @@ const navItems = [
 const pageTitle: Record<string, string> = {
   '/admin':                 'Dashboard',
   '/admin/supporters':      'Supporter Directory',
+  '/admin/class-representatives': 'Class Rep Review',
   '/admin/communications':  'Communications Centre',
   '/admin/activities':      'Campaign Activities',
   '/admin/reports':         'Reports & Analytics',

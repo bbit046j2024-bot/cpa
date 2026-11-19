@@ -127,3 +127,28 @@ The portal automatically initializes with the 25 verified supporters extracted f
 ## 7. License & Compliance
 Built strictly for the 2026/2027 TUM Department of Management Science Super Delegate Election under the Comrades Project Alliance (CPA). Compliant with the Kenyan Data Protection Act 2019.
 
+
+## 8. Class Representative Registration Pipeline
+
+Class representative applications are stored in the separate `cpa_class_representatives` table and never added to the supporter register. Public submissions use `POST /api/class-representatives`; records begin with `pending` review status. Only a reviewer who checks the official class rep list should mark a record `verified`.
+
+### Database setup
+
+Run the additive migration once from this project directory after configuring `.env.local` with the existing TiDB credentials:
+
+```bash
+node scripts/migrate-class-representatives.js
+```
+
+The script creates only `cpa_class_representatives`; it does not modify or seed existing tables.
+
+### Vercel environment settings
+
+Set these server-side variables for the CPA Vercel project:
+
+- `CLASS_REP_ALLOWED_ORIGINS`: exact origin of Aggrey's published site, set it to `https://cpatum.netlify.app` (no path or trailing slash).
+- `CLASS_REP_REVIEW_TOKEN`: a separate, high-entropy secret used to open the class rep verification queue at `/admin/class-representatives`.
+
+Redeploy CPA after adding the variables. Do not put the review token or TiDB credentials in Aggrey's static HTML. CORS will reject requests from origins that are not explicitly listed.
+
+The form returns a pending-review confirmation. It does not itself prove class representative status or grant voting eligibility; the CPA review page must mark the applicant `verified` after checking the official list.

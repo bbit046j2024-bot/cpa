@@ -9,6 +9,23 @@ export interface User {
 }
 
 export type SupporterStatus = 'active' | 'inactive';
+export type ClassRepReviewStatus = 'pending' | 'verified' | 'rejected';
+
+export interface ClassRepresentativeRegistration {
+  id: string;
+  fullName: string;
+  contact: string;
+  contactType: 'phone' | 'email';
+  course: string;
+  yearOfStudy: string;
+  classRepConfirmed: boolean;
+  privacyConsent: boolean;
+  consentAt: string;
+  reviewStatus: ClassRepReviewStatus;
+  registeredAt: string;
+  reviewedAt: string | null;
+  source: string;
+}
 
 export interface Supporter {
   id: string;

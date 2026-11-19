@@ -1,5 +1,5 @@
 import mysql from 'mysql2/promise';
-import { Supporter, CampaignActivity, CampaignUpdate, CommunicationMessage, SystemSettings } from './types';
+import { Supporter, ClassRepresentativeRegistration, ClassRepReviewStatus, CampaignActivity, CampaignUpdate, CommunicationMessage, SystemSettings } from './types';
 
 let pool: mysql.Pool | null = null;
 
@@ -194,6 +194,39 @@ export const tidb = {
     };
   },
 
+  // ─── CLASS REPRESENTATIVE REGISTRATIONS (separate from supporters) ────────
+
+  async addClassRepresentative(registration: Omit<ClassRepresentativeRegistration, 'reviewStatus' | 'reviewedAt'>): Promise<void> {
+    await queryTiDb(
+      `INSERT INTO cpa_class_representatives
+       (id, fullName, contact, contactType, course, yearOfStudy, classRepConfirmed, privacyConsent, consentAt, reviewStatus, registeredAt, reviewedAt, source)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, NULL, ?)`,
+      [registration.id, registration.fullName, registration.contact, registration.contactType,
+       registration.course, registration.yearOfStudy, registration.classRepConfirmed ? 1 : 0, registration.privacyConsent ? 1 : 0, registration.consentAt, registration.registeredAt, registration.source]
+    );
+  },
+
+  async getClassRepresentatives(status = ''): Promise<ClassRepresentativeRegistration[]> {
+    const validStatus = ['pending', 'verified', 'rejected'].includes(status);
+    const rows = validStatus
+      ? await queryTiDb<any>(
+          'SELECT id, fullName, contact, contactType, course, yearOfStudy, classRepConfirmed, privacyConsent, consentAt, reviewStatus, registeredAt, reviewedAt, source FROM cpa_class_representatives WHERE reviewStatus = ? ORDER BY registeredAt DESC',
+          [status]
+        )
+      : await queryTiDb<any>(
+          'SELECT id, fullName, contact, contactType, course, yearOfStudy, classRepConfirmed, privacyConsent, consentAt, reviewStatus, registeredAt, reviewedAt, source FROM cpa_class_representatives ORDER BY registeredAt DESC'
+        );
+    return rows as ClassRepresentativeRegistration[];
+  },
+
+  async reviewClassRepresentative(id: string, status: ClassRepReviewStatus): Promise<boolean> {
+    const reviewedAt = status === 'pending' ? null : new Date().toISOString();
+    const [result] = await getTiDbPool().query(
+      'UPDATE cpa_class_representatives SET reviewStatus = ?, reviewedAt = ? WHERE id = ?',
+      [status, reviewedAt, id]
+    );
+    return (result as mysql.ResultSetHeader).affectedRows > 0;
+  },
   // ─── ACTIVITIES ───────────────────────────────────────────────────────────
 
   async getActivities(): Promise<CampaignActivity[]> {
