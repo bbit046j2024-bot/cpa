@@ -40,6 +40,8 @@ export default function SupportersDirectoryPage() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<Supporter | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Form states for Add / Edit
   const [formName, setFormName] = useState('');
@@ -174,15 +176,25 @@ export default function SupportersDirectoryPage() {
   // Handle Delete
   const handleDelete = async () => {
     if (!deleteConfirm) return;
-    try {
-      const res = await fetch(`/api/supporters/${deleteConfirm.id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+    setDeleting(true);
+    setDeleteError(null);
+    const targetId = deleteConfirm.id;
 
+    try {
+      const res = await fetch(`/api/supporters/${targetId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete record');
+
+      // Optimistically remove from state immediately
+      setSupporters(prev => prev.filter(s => s.id !== targetId));
       setDeleteConfirm(null);
       fetchSupporters();
-    } catch (e) {
-      console.error(e);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error deleting supporter record';
+      setDeleteError(msg);
+      console.error('Delete supporter error:', err);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -781,18 +793,32 @@ export default function SupportersDirectoryPage() {
               Are you sure you want to permanently delete <strong className="text-campaign-darkText">{deleteConfirm.fullName}</strong> ({deleteConfirm.phoneNumber})? This action is logged for campaign audit purposes.
             </p>
 
+            {deleteError && (
+              <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs">
+                {deleteError}
+              </div>
+            )}
+
             <div className="flex items-center justify-center gap-3 pt-2">
               <button
+                type="button"
+                disabled={deleting}
                 onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 border border-gray-200 rounded-xl text-xs font-bold text-campaign-muted hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-200 rounded-xl text-xs font-bold text-campaign-muted hover:bg-gray-50 disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
+                type="button"
+                disabled={deleting}
                 onClick={handleDelete}
-                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow"
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
-                Delete Record
+                {deleting ? (
+                  <span>Deleting...</span>
+                ) : (
+                  <span>Delete Record</span>
+                )}
               </button>
             </div>
           </div>

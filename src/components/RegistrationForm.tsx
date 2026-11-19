@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { normalizeKenyanPhone } from '@/lib/phone';
-import { CheckCircle2, AlertCircle, Phone, User, GraduationCap, Calendar, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Phone, User, GraduationCap, Calendar, ShieldCheck, ArrowRight, Sparkles, AlertTriangle } from 'lucide-react';
 
 interface Props {
   onSuccess?: () => void;
@@ -40,8 +40,50 @@ export default function RegistrationForm({ courses = DEFAULT_COURSES, years = DE
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successData, setSuccessData] = useState<{ name: string; normalizedPhone: string } | null>(null);
 
+  // Live conflict detection states
+  const [nameConflict, setNameConflict] = useState<string | null>(null);
+  const [phoneConflict, setPhoneConflict] = useState<string | null>(null);
+
   // Live phone validation preview
   const phoneValidation = phoneNumber.trim() ? normalizeKenyanPhone(phoneNumber) : null;
+
+  // Real-time duplicate & contact validation hook
+  useEffect(() => {
+    const trimmedName = fullName.trim();
+    const trimmedPhone = phoneNumber.trim();
+
+    if (trimmedName.length < 2 && trimmedPhone.length < 5) {
+      setNameConflict(null);
+      setPhoneConflict(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams();
+        if (trimmedName.length >= 2) params.append('name', trimmedName);
+        if (trimmedPhone.length >= 5) params.append('phone', trimmedPhone);
+
+        const res = await fetch(`/api/supporters/validate?${params.toString()}`);
+        const data = await res.json();
+        if (data.success) {
+          if (data.nameConflict?.exists) {
+            setNameConflict(`Already Listed: A student named "${data.nameConflict.fullName}" is already in the supporters register (${data.nameConflict.course}, ${data.nameConflict.yearOfStudy}). Already listed students cannot register again.`);
+          } else {
+            setNameConflict(null);
+          }
+
+          if (data.phoneConflict?.exists) {
+            setPhoneConflict(`Already Listed: This contact number is already registered for ${data.phoneConflict.fullName}.`);
+          } else {
+            setPhoneConflict(null);
+          }
+        }
+      } catch (_) {}
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [fullName, phoneNumber]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,10 +95,20 @@ export default function RegistrationForm({ courses = DEFAULT_COURSES, years = DE
       return;
     }
 
+    if (nameConflict) {
+      setErrorMsg(nameConflict);
+      return;
+    }
+
     // Validate Phone Number
     const phoneResult = normalizeKenyanPhone(phoneNumber);
     if (!phoneResult.isValid) {
       setErrorMsg(phoneResult.error || 'Please enter a valid Kenyan phone number (e.g. 0712345678)');
+      return;
+    }
+
+    if (phoneConflict) {
+      setErrorMsg(phoneConflict);
       return;
     }
 
@@ -203,9 +255,17 @@ export default function RegistrationForm({ courses = DEFAULT_COURSES, years = DE
               placeholder="e.g. Brian Ochieng Otieno"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-campaign-lightBg border border-campaign-border rounded-xl text-sm font-medium text-campaign-darkText focus:bg-white focus:outline-none focus:ring-2 focus:ring-campaign-primaryGreen focus:border-transparent transition-all"
+              className={`w-full pl-10 pr-4 py-3 bg-campaign-lightBg border rounded-xl text-sm font-medium text-campaign-darkText focus:bg-white focus:outline-none focus:ring-2 transition-all ${
+                nameConflict ? 'border-amber-400 focus:ring-amber-500' : 'border-campaign-border focus:ring-campaign-primaryGreen'
+              }`}
             />
           </div>
+          {nameConflict && (
+            <div className="mt-1.5 p-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-xs flex items-start gap-1.5 animate-in fade-in">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <span>{nameConflict}</span>
+            </div>
+          )}
         </div>
 
         {/* FIELD 2: Phone Number */}
@@ -214,7 +274,7 @@ export default function RegistrationForm({ courses = DEFAULT_COURSES, years = DE
             <label className="block text-xs font-bold uppercase tracking-wider text-campaign-darkText">
               2. Phone Number <span className="text-red-500">*</span>
             </label>
-            {phoneValidation && phoneValidation.isValid && (
+            {phoneValidation && phoneValidation.isValid && !phoneConflict && (
               <span className="text-[11px] font-semibold text-campaign-primaryGreen bg-campaign-lightGreen px-2 py-0.5 rounded-md">
                 ✓ {phoneValidation.network} ({phoneValidation.formatted})
               </span>
@@ -230,12 +290,28 @@ export default function RegistrationForm({ courses = DEFAULT_COURSES, years = DE
               placeholder="e.g. 0712 345 678 or 0112 345 678"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-campaign-lightBg border border-campaign-border rounded-xl text-sm font-medium text-campaign-darkText focus:bg-white focus:outline-none focus:ring-2 focus:ring-campaign-primaryGreen focus:border-transparent transition-all"
+              className={`w-full pl-10 pr-4 py-3 bg-campaign-lightBg border rounded-xl text-sm font-medium text-campaign-darkText focus:bg-white focus:outline-none focus:ring-2 transition-all ${
+                phoneConflict || (phoneValidation && !phoneValidation.isValid && phoneNumber.trim().length >= 8)
+                  ? 'border-amber-400 focus:ring-amber-500'
+                  : 'border-campaign-border focus:ring-campaign-primaryGreen'
+              }`}
             />
           </div>
-          <p className="text-[11px] text-campaign-muted mt-1">
-            Kenyan formats accepted (07xx, 01xx or +254). Your number is kept private and never published.
-          </p>
+          {phoneConflict ? (
+            <div className="mt-1.5 p-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-xs flex items-start gap-1.5 animate-in fade-in">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <span>{phoneConflict}</span>
+            </div>
+          ) : phoneValidation && !phoneValidation.isValid && phoneNumber.trim().length >= 8 ? (
+            <div className="mt-1.5 p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs flex items-start gap-1.5 animate-in fade-in">
+              <AlertCircle className="w-3.5 h-3.5 text-red-600 flex-shrink-0 mt-0.5" />
+              <span>{phoneValidation.error}</span>
+            </div>
+          ) : (
+            <p className="text-[11px] text-campaign-muted mt-1">
+              Kenyan formats accepted (07xx, 01xx or +254). Your number is kept private and never published.
+            </p>
+          )}
         </div>
 
         {/* FIELD 3: Course */}

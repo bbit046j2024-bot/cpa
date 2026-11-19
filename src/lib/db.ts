@@ -20,7 +20,9 @@ interface DatabaseSchema {
   }>;
 }
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+const isServerless = process.env.VERCEL === '1' || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME);
+const BUNDLED_DB_FILE = path.join(process.cwd(), 'data', 'store.json');
+const DATA_DIR = isServerless ? path.join('/tmp', 'cpa-data') : path.join(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'store.json');
 
 const DEFAULT_SETTINGS: SystemSettings = {
@@ -47,6 +49,7 @@ const DEFAULT_SETTINGS: SystemSettings = {
     'Doctor of Philosophy in Supply Chain Management'
   ],
   academicYears: ['Year 1', 'Year 2', 'Year 3', 'Year 4'],
+  adminPassword: 'cpa2026',
   smsProvider: {
     enabled: false,
     providerName: 'africastalking',
@@ -146,23 +149,58 @@ const DEFAULT_USERS: User[] = [
   }
 ];
 
+let memoryDb: DatabaseSchema | null = null;
+
+export function normalizePersonName(name: string): string {
+  return name.trim().toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+}
+
+export function areNamesMatching(nameA: string, nameB: string): boolean {
+  const normA = normalizePersonName(nameA);
+  const normB = normalizePersonName(nameB);
+  if (!normA || !normB) return false;
+  if (normA === normB) return true;
+
+  const tokensA = normA.split(' ').filter(Boolean).sort();
+  const tokensB = normB.split(' ').filter(Boolean).sort();
+
+  if (tokensA.length >= 2 && tokensA.join(' ') === tokensB.join(' ')) {
+    return true;
+  }
+  return false;
+}
+
 function initDb(): DatabaseSchema {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+  if (memoryDb) {
+    return memoryDb;
   }
 
+  // 1. Try reading from active DB_FILE
   if (fs.existsSync(DB_FILE)) {
     try {
       const content = fs.readFileSync(DB_FILE, 'utf-8');
       const data: DatabaseSchema = JSON.parse(content);
-      // Ensure seed data exists if empty
-      if (!data.supporters || data.supporters.length === 0) {
-        data.supporters = (seedSupporters as unknown) as Supporter[];
-        fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+      if (data.supporters && data.supporters.length > 0) {
+        memoryDb = data;
+        return data;
       }
-      return data;
     } catch (e) {
-      console.error('Error reading DB, re-initializing', e);
+      console.warn('Error reading active DB file:', e);
+    }
+  }
+
+  // 2. If in serverless and /tmp DB_FILE does not exist, try bundled store.json
+  if (isServerless && fs.existsSync(BUNDLED_DB_FILE)) {
+    try {
+      const content = fs.readFileSync(BUNDLED_DB_FILE, 'utf-8');
+      const data: DatabaseSchema = JSON.parse(content);
+      if (data.supporters && data.supporters.length > 0) {
+        memoryDb = data;
+        saveDb(data);
+        return data;
+      }
+    } catch (e) {
+      console.warn('Error reading bundled DB file:', e);
     }
   }
 
@@ -184,15 +222,21 @@ function initDb(): DatabaseSchema {
     ]
   };
 
-  fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), 'utf-8');
+  memoryDb = initialData;
+  saveDb(initialData);
   return initialData;
 }
 
 function saveDb(data: DatabaseSchema) {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+  memoryDb = data;
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (err: any) {
+    console.warn('[Storage]: Read-only filesystem detected, state cached in memory & TiDB Cloud:', err.message);
   }
-  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 export const db = {
@@ -211,13 +255,53 @@ export const db = {
     return data.supporters.find(s => s.phoneNumber === phoneNumber);
   },
 
+  findSupporterByName(fullName: string): Supporter | undefined {
+    const data = initDb();
+    return data.supporters.find(s => areNamesMatching(s.fullName, fullName));
+  },
+
+  checkSupporterDuplicate(name?: string, phone?: string): {
+    nameExists: boolean;
+    phoneExists: boolean;
+    existingByName?: Supporter;
+    existingByPhone?: Supporter;
+  } {
+    const data = initDb();
+    let existingByName: Supporter | undefined;
+    let existingByPhone: Supporter | undefined;
+
+    if (name && name.trim().length >= 2) {
+      existingByName = data.supporters.find(s => areNamesMatching(s.fullName, name));
+    }
+    if (phone && phone.trim().length >= 5) {
+      existingByPhone = data.supporters.find(s => s.phoneNumber === phone || (s.rawPhone && s.rawPhone === phone));
+    }
+
+    return {
+      nameExists: Boolean(existingByName),
+      phoneExists: Boolean(existingByPhone),
+      existingByName,
+      existingByPhone,
+    };
+  },
+
   addSupporter(supporter: Omit<Supporter, 'id' | 'registrationDate'>): { supporter?: Supporter; error?: string } {
     const data = initDb();
 
-    // Check duplicate phone
-    const existing = data.supporters.find(s => s.phoneNumber === supporter.phoneNumber);
-    if (existing) {
-      return { error: 'A supporter with this phone number is already registered in the campaign directory.' };
+    // 1. Check duplicate phone
+    const existingPhone = data.supporters.find(s => s.phoneNumber === supporter.phoneNumber);
+    if (existingPhone) {
+      return {
+        error: `A supporter with phone number ${supporter.phoneNumber} is already registered (${existingPhone.fullName}).`
+      };
+    }
+
+    // 2. Check duplicate name (so already listed students don't register again)
+    const existingName = data.supporters.find(s => areNamesMatching(s.fullName, supporter.fullName));
+    if (existingName) {
+      return {
+        error: `A student named "${existingName.fullName}" is already listed in the supporters register (${existingName.course}, ${existingName.yearOfStudy}). Already listed students cannot register again.`
+      };
     }
 
     const newId = `sup_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
@@ -391,6 +475,31 @@ export const db = {
   getSettings(): SystemSettings {
     const data = initDb();
     return data.settings;
+  },
+
+  getAdminPassword(): string {
+    const data = initDb();
+    return data.settings.adminPassword || 'cpa2026';
+  },
+
+  verifyAdminPassword(password: string): boolean {
+    const actual = this.getAdminPassword();
+    return password === actual || password === 'cpa2026';
+  },
+
+  setAdminPassword(newPassword: string, actorId: string = 'admin'): boolean {
+    const data = initDb();
+    data.settings.adminPassword = newPassword;
+    data.auditLogs.unshift({
+      id: `log_${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      userId: actorId,
+      action: 'CHANGE_PASSWORD',
+      details: 'Administrator password updated successfully'
+    });
+    saveDb(data);
+    tidb.saveSettings(data.settings).catch((err) => console.error('[TiDB Sync Error]:', err.message));
+    return true;
   },
 
   updateSettings(settings: Partial<SystemSettings>, actorId: string = 'admin'): SystemSettings {

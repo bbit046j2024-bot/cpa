@@ -1,15 +1,22 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { tidb } from '@/lib/tidb';
 import { normalizeKenyanPhone } from '@/lib/phone';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  props: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
-    const { id } = await params;
-    const supporter = db.getSupporterById(id);
+    const params = await Promise.resolve(props.params);
+    const id = params?.id;
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'Supporter ID is required' }, { status: 400 });
+    }
 
+    const supporter = db.getSupporterById(id);
     if (!supporter) {
       return NextResponse.json({ success: false, error: 'Supporter not found' }, { status: 404 });
     }
@@ -23,10 +30,15 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  props: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const params = await Promise.resolve(props.params);
+    const id = params?.id;
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'Supporter ID is required' }, { status: 400 });
+    }
+
     const body = await request.json();
 
     // If phone number is being changed, normalize and validate
@@ -40,10 +52,7 @@ export async function PUT(
     }
 
     const updated = db.updateSupporter(id, body, body.actorId || 'admin');
-
-    if (!updated) {
-      return NextResponse.json({ success: false, error: 'Supporter not found' }, { status: 404 });
-    }
+    await tidb.updateSupporter(id, body).catch(err => console.error('[TiDB Update Error]:', err));
 
     return NextResponse.json({ success: true, supporter: updated });
   } catch (error: unknown) {
@@ -54,18 +63,21 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  props: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const params = await Promise.resolve(props.params);
+    const id = params?.id;
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'Supporter ID is required' }, { status: 400 });
+    }
+
     const { searchParams } = new URL(request.url);
     const actorId = searchParams.get('actorId') || 'admin';
 
+    // Delete from TiDB Cloud and local store
+    await tidb.deleteSupporter(id).catch(err => console.error('[TiDB Delete Error]:', err));
     const deleted = db.deleteSupporter(id, actorId);
-
-    if (!deleted) {
-      return NextResponse.json({ success: false, error: 'Supporter not found' }, { status: 404 });
-    }
 
     return NextResponse.json({ success: true, message: 'Supporter record deleted successfully' });
   } catch (error: unknown) {
@@ -73,4 +85,3 @@ export async function DELETE(
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
-

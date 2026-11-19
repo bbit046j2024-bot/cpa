@@ -73,6 +73,7 @@ export interface SystemSettings {
   slogan: string;
   availableCourses: string[];
   academicYears: string[];
+  adminPassword?: string;
   smsProvider: {
     enabled: boolean;
     providerName: 'africastalking' | 'twilio' | 'custom_bulk_sms';
