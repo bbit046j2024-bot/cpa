@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { tidb } from '@/lib/tidb';
 import { normalizeKenyanPhone } from '@/lib/phone';
+import { secureJson } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,29 +20,49 @@ export async function GET(request: Request) {
       }
     }
 
-    const dupCheck = db.checkSupporterDuplicate(name, normalizedPhone || phone);
+    const allSupporters = await tidb.getSupporters();
 
-    return NextResponse.json({
+    // Check name duplicate
+    let existingByName: any = undefined;
+    if (name && name.trim().length >= 2) {
+      const normInput = name.trim().toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+      existingByName = allSupporters.find(s => {
+        const normExisting = s.fullName.trim().toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+        if (normExisting === normInput) return true;
+        const tokensA = normExisting.split(' ').sort().join(' ');
+        const tokensB = normInput.split(' ').sort().join(' ');
+        return tokensA.length > 2 && tokensA === tokensB;
+      });
+    }
+
+    // Check phone duplicate
+    let existingByPhone: any = undefined;
+    const phoneToFind = normalizedPhone || phone.trim();
+    if (phoneToFind.length >= 5) {
+      existingByPhone = allSupporters.find(s => s.phoneNumber === phoneToFind || s.rawPhone === phoneToFind);
+    }
+
+    return secureJson({
       success: true,
       phoneValidation,
-      nameConflict: dupCheck.nameExists
+      nameConflict: existingByName
         ? {
             exists: true,
-            fullName: dupCheck.existingByName?.fullName,
-            course: dupCheck.existingByName?.course,
-            yearOfStudy: dupCheck.existingByName?.yearOfStudy,
+            fullName: existingByName.fullName,
+            course: existingByName.course,
+            yearOfStudy: existingByName.yearOfStudy,
           }
         : { exists: false },
-      phoneConflict: dupCheck.phoneExists
+      phoneConflict: existingByPhone
         ? {
             exists: true,
-            fullName: dupCheck.existingByPhone?.fullName,
-            phoneNumber: dupCheck.existingByPhone?.phoneNumber,
+            fullName: existingByPhone.fullName,
+            phoneNumber: existingByPhone.phoneNumber,
           }
         : { exists: false },
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Validation error';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return secureJson({ success: false, error: message }, { status: 500 });
   }
 }

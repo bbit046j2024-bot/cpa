@@ -1,83 +1,87 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { tidb } from '@/lib/tidb';
 import { sendBulkSms } from '@/lib/sms';
+import { secureJson, sanitizeString } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const communications = db.getCommunications();
-    const settings = db.getSettings();
-    return NextResponse.json({
+    const [communications, settings] = await Promise.all([
+      tidb.getCommunications(),
+      tidb.getSettings(),
+    ]);
+
+    // Never expose adminPassword or secrets in the response
+    const safeSmsSettings = settings?.smsProvider || { enabled: false };
+
+    return secureJson({
       success: true,
       communications,
-      smsSettings: settings.smsProvider,
+      smsSettings: safeSmsSettings,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Server error';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return secureJson({ success: false, error: message }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, message, channel, targetCourse, targetYear, createdBy } = body;
+    const title        = sanitizeString(body.title, 200);
+    const message      = sanitizeString(body.message, 1600); // SMS safe max
+    const rawChannel   = sanitizeString(body.channel, 20);
+    const channel: 'sms' | 'whatsapp' = rawChannel === 'whatsapp' ? 'whatsapp' : 'sms';
+    const targetCourse = sanitizeString(body.targetCourse, 200) || 'all';
+    const targetYear   = sanitizeString(body.targetYear, 20) || 'all';
+    const createdBy    = sanitizeString(body.createdBy, 50) || 'admin';
 
     if (!title || !message) {
-      return NextResponse.json(
+      return secureJson(
         { success: false, error: 'Title and message are required' },
         { status: 400 }
       );
     }
 
-    // Determine consented recipient count (ONLY consented and active supporters)
-    let eligibleSupporters = db
-      .getSupporters()
-      .filter((s) => s.communicationConsent && s.status === 'active');
-
+    // Pull live supporter list from TiDB for recipient filtering
+    let allSupporters = await tidb.getSupporters();
+    let eligible = allSupporters.filter(s => s.communicationConsent && s.status === 'active');
     if (targetCourse && targetCourse !== 'all') {
-      eligibleSupporters = eligibleSupporters.filter((s) => s.course === targetCourse);
+      eligible = eligible.filter(s => s.course === targetCourse);
     }
-
     if (targetYear && targetYear !== 'all') {
-      eligibleSupporters = eligibleSupporters.filter((s) => s.yearOfStudy === targetYear);
+      eligible = eligible.filter(s => s.yearOfStudy === targetYear);
     }
 
-    const recipientPhones = eligibleSupporters
-      .map((s) => s.phoneNumber)
-      .filter(Boolean);
+    const recipientPhones = eligible.map(s => s.phoneNumber).filter(Boolean);
 
     let dispatchResult = null;
-
     if (channel === 'sms' && recipientPhones.length > 0) {
       dispatchResult = await sendBulkSms(recipientPhones, message);
     }
 
-    const status = channel === 'sms' && dispatchResult && !dispatchResult.success ? 'draft' : 'sent';
+    const status: 'draft' | 'sent' | 'failed' = channel === 'sms' && dispatchResult && !dispatchResult.success ? 'draft' : 'sent';
 
-    const comm = db.addCommunication({
+    const comm = {
+      id: `comm_${Date.now()}`,
       title,
       message,
-      channel: channel || 'sms',
-      targetCourse: targetCourse || 'all',
-      targetYear: targetYear || 'all',
-      recipientCount: eligibleSupporters.length,
+      channel,
+      targetCourse,
+      targetYear,
+      recipientCount: eligible.length,
       status,
+      createdAt: new Date().toISOString(),
       sentAt: status === 'sent' ? new Date().toISOString() : undefined,
-      createdBy: createdBy || 'admin',
-    });
+      createdBy,
+    };
 
-    return NextResponse.json(
-      {
-        success: true,
-        communication: comm,
-        dispatchResult,
-      },
-      { status: 201 }
-    );
+    await tidb.addCommunication(comm);
+
+    return secureJson({ success: true, communication: comm, dispatchResult }, { status: 201 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Server error';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return secureJson({ success: false, error: message }, { status: 500 });
   }
 }

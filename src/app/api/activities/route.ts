@@ -1,48 +1,56 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { tidb } from '@/lib/tidb';
+import { secureJson, sanitizeString } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const activities = db.getActivities();
-    return NextResponse.json({ success: true, activities });
+    const activities = await tidb.getActivities();
+    return secureJson({ success: true, activities });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Server error';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return secureJson({ success: false, error: message }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, description, date, time, venue, status, category, targetAudience, createdBy } = body;
+    const title    = sanitizeString(body.title, 200);
+    const venue    = sanitizeString(body.venue, 200);
+    const date     = sanitizeString(body.date, 20);
+    const time     = sanitizeString(body.time, 10);
+    const desc     = sanitizeString(body.description, 1000);
+    const status   = sanitizeString(body.status, 20) || 'upcoming';
+    const category = sanitizeString(body.category, 50) || 'hall_meeting';
+    const audience = sanitizeString(body.targetAudience, 200) || 'Management Science Students';
+    const creator  = sanitizeString(body.createdBy, 50) || 'admin';
 
     if (!title || !date || !venue) {
-      return NextResponse.json(
+      return secureJson(
         { success: false, error: 'Title, date, and venue are required' },
         { status: 400 }
       );
     }
 
-    const activity = db.addActivity(
-      {
-        title,
-        description: description || '',
-        date,
-        time: time || '14:00',
-        venue,
-        status: status || 'upcoming',
-        category: category || 'hall_meeting',
-        targetAudience: targetAudience || 'Management Science Students',
-        createdBy: createdBy || 'admin',
-      },
-      createdBy || 'admin'
-    );
+    const newActivity = {
+      id: `act_${Date.now()}`,
+      title,
+      description: desc,
+      date,
+      time: time || '14:00',
+      venue,
+      status: status as 'upcoming' | 'completed' | 'cancelled',
+      category: category as 'hall_meeting' | 'strategy' | 'outreach',
+      targetAudience: audience,
+      createdBy: creator,
+    };
 
-    return NextResponse.json({ success: true, activity }, { status: 201 });
+    await tidb.addActivity(newActivity);
+    return secureJson({ success: true, activity: newActivity }, { status: 201 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Server error';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return secureJson({ success: false, error: message }, { status: 500 });
   }
 }

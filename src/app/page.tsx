@@ -1,7 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { db } from '@/lib/db';
 import {
   Award,
   CheckCircle,
@@ -15,8 +14,6 @@ import {
 export const revalidate = 0; // Ensure fresh data on every load
 
 export default function HomePage() {
-  const stats = db.getStats();
-  const settings = db.getSettings();
 
   return (
     <div className="w-full max-w-full overflow-x-hidden space-y-12 sm:space-y-24 pb-20 sm:pb-24">

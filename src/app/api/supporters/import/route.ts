@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { tidb } from '@/lib/tidb';
 import { normalizeKenyanPhone } from '@/lib/phone';
+import { secureJson, sanitizeString } from '@/lib/security';
+import { Supporter } from '@/lib/types';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
@@ -8,49 +12,45 @@ export async function POST(request: Request) {
     const { rows, actorId } = body;
 
     if (!Array.isArray(rows) || rows.length === 0) {
-      return NextResponse.json(
+      return secureJson(
         { success: false, error: 'No data rows provided for import' },
         { status: 400 }
       );
     }
 
-    const validItems: Array<{
-      fullName: string;
-      phoneNumber: string;
-      rawPhone: string;
-      course: string;
-      yearOfStudy: string;
-      communicationConsent: boolean;
-      consentTimestamp: string;
-      status: 'active' | 'inactive';
-      source: string;
-    }> = [];
+    if (rows.length > 500) {
+      return secureJson(
+        { success: false, error: 'Maximum 500 rows per import batch' },
+        { status: 400 }
+      );
+    }
 
-    const skippedRows: Array<{ row: number; reason: string; data: unknown }> = [];
+    const validItems: Supporter[] = [];
+    const skippedRows: Array<{ row: number; reason: string }> = [];
 
     rows.forEach((row, index) => {
-      const name = (row.fullName || row['Full Name'] || row.name || '').trim();
-      const rawContact = String(row.phoneNumber || row['Phone Number'] || row.contact || row.Phone || '').trim();
-      const course = (row.course || row['Course'] || 'Management Science').trim();
-      const year = (row.yearOfStudy || row['Year of Study'] || row.year || 'Year 2').trim();
+      const name        = sanitizeString(row.fullName || row['Full Name'] || row.name || '', 200);
+      const rawContact  = sanitizeString(String(row.phoneNumber || row['Phone Number'] || row.contact || row.Phone || ''), 20);
+      const course      = sanitizeString(row.course || row['Course'] || 'Management Science', 300);
+      const year        = sanitizeString(row.yearOfStudy || row['Year of Study'] || row.year || 'Year 2', 20);
 
       if (!name) {
-        skippedRows.push({ row: index + 1, reason: 'Missing Full Name', data: row });
+        skippedRows.push({ row: index + 1, reason: 'Missing Full Name' });
         return;
       }
-
       if (!rawContact) {
-        skippedRows.push({ row: index + 1, reason: 'Missing Phone Number', data: row });
+        skippedRows.push({ row: index + 1, reason: 'Missing Phone Number' });
         return;
       }
 
       const phoneResult = normalizeKenyanPhone(rawContact);
       if (!phoneResult.isValid) {
-        skippedRows.push({ row: index + 1, reason: `Invalid Kenyan Phone: ${rawContact}`, data: row });
+        skippedRows.push({ row: index + 1, reason: `Invalid Kenyan Phone: ${rawContact}` });
         return;
       }
 
       validItems.push({
+        id: `sup_${Date.now()}_${Math.random().toString(36).substring(2, 6)}_${index}`,
         fullName: name,
         phoneNumber: phoneResult.normalized,
         rawPhone: phoneResult.formatted,
@@ -58,14 +58,16 @@ export async function POST(request: Request) {
         yearOfStudy: year,
         communicationConsent: true,
         consentTimestamp: new Date().toISOString(),
+        registrationDate: new Date().toISOString(),
         status: 'active',
         source: 'Bulk File Import',
       });
     });
 
-    const result = db.bulkAddSupporters(validItems, actorId || 'admin');
+    // Write directly to TiDB (deduplication handled inside bulkAddSupporters)
+    const result = await tidb.bulkAddSupporters(validItems);
 
-    return NextResponse.json({
+    return secureJson({
       success: true,
       summary: {
         totalReceived: rows.length,
@@ -77,7 +79,6 @@ export async function POST(request: Request) {
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Server error during import';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return secureJson({ success: false, error: message }, { status: 500 });
   }
 }
-

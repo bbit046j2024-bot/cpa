@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
 import { tidb } from '@/lib/tidb';
 import { normalizeKenyanPhone } from '@/lib/phone';
+import { secureJson, sanitizeString } from '@/lib/security';
 import { Supporter } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -15,21 +15,8 @@ export async function GET(request: Request) {
     const consent = searchParams.get('consent');
     const status = searchParams.get('status') || '';
 
-    // Always fetch from TiDB first (source of truth - survives cold starts)
-    let supporters: Supporter[] = [];
-    try {
-      supporters = await tidb.getSupporters();
-      // Also hydrate in-memory cache so other local ops stay consistent
-      supporters.forEach(s => {
-        const existing = db.getSupporterById(s.id);
-        if (!existing) {
-          db.addSupporterToMemory?.(s);
-        }
-      });
-    } catch (tidbErr) {
-      console.warn('[TiDB] getSupporters failed, falling back to local store:', tidbErr);
-      supporters = db.getSupporters();
-    }
+    // Always fetch directly from TiDB Cloud
+    let supporters = await tidb.getSupporters();
 
     if (search) {
       supporters = supporters.filter(
@@ -57,88 +44,89 @@ export async function GET(request: Request) {
       supporters = supporters.filter((s) => s.status === status);
     }
 
-    return NextResponse.json({
+    return secureJson({
       success: true,
       count: supporters.length,
       supporters,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to fetch supporters';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return secureJson({ success: false, error: message }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { fullName, phoneNumber, rawPhone, course, yearOfStudy, communicationConsent } = body;
+    const rawFullName = sanitizeString(body.fullName, 200);
+    const rawPhone = sanitizeString(body.phoneNumber, 25);
+    const rawCourse = sanitizeString(body.course, 300);
+    const rawYear = sanitizeString(body.yearOfStudy, 20);
+    const communicationConsent = Boolean(body.communicationConsent);
 
     // Strict 4-field validation
-    if (!fullName || typeof fullName !== 'string' || fullName.trim().length < 2) {
-      return NextResponse.json(
+    if (!rawFullName || rawFullName.length < 2) {
+      return secureJson(
         { success: false, error: 'Full name is required (at least 2 characters)' },
         { status: 400 }
       );
     }
 
-    if (!phoneNumber) {
-      return NextResponse.json(
+    if (!rawPhone) {
+      return secureJson(
         { success: false, error: 'Phone number is required' },
         { status: 400 }
       );
     }
 
-    const phoneValidation = normalizeKenyanPhone(phoneNumber);
+    const phoneValidation = normalizeKenyanPhone(rawPhone);
     if (!phoneValidation.isValid) {
-      return NextResponse.json(
+      return secureJson(
         { success: false, error: phoneValidation.error || 'Invalid Kenyan mobile phone number' },
         { status: 400 }
       );
     }
 
-    if (!course || typeof course !== 'string') {
-      return NextResponse.json(
+    if (!rawCourse) {
+      return secureJson(
         { success: false, error: 'Departmental course is required' },
         { status: 400 }
       );
     }
 
-    if (!yearOfStudy || typeof yearOfStudy !== 'string') {
-      return NextResponse.json(
+    if (!rawYear) {
+      return secureJson(
         { success: false, error: 'Year of study is required' },
         { status: 400 }
       );
     }
 
-    // Check duplicates directly in TiDB (source of truth)
-    let allSupporters: Supporter[] = [];
-    try {
-      allSupporters = await tidb.getSupporters();
-    } catch (e) {
-      console.warn('[TiDB] getSupporters failed during duplicate check, using local:', e);
-      allSupporters = db.getSupporters();
-    }
-
+    // Check duplicates directly in TiDB
+    const allSupporters = await tidb.getSupporters();
     const normalizedPhone = phoneValidation.normalized;
-    const trimmedName = fullName.trim().toUpperCase();
+    const trimmedName = rawFullName.toUpperCase();
 
     const phoneExists = allSupporters.find(s => s.phoneNumber === normalizedPhone);
     if (phoneExists) {
-      return NextResponse.json(
+      return secureJson(
         { success: false, error: `A supporter with phone number ${normalizedPhone} is already registered (${phoneExists.fullName}).` },
         { status: 409 }
       );
     }
 
-    // Name duplicate check (token-based)
+    // Token-based matching so reversed first/last name matches
+    const nameNormInput = trimmedName.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
     const nameExists = allSupporters.find(s => {
       const a = s.fullName.trim().toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
-      const b = trimmedName.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
-      return a === b;
+      if (a === nameNormInput) return true;
+      const tokensA = a.split(' ').sort().join(' ');
+      const tokensB = nameNormInput.split(' ').sort().join(' ');
+      return tokensA.length > 2 && tokensA === tokensB;
     });
+
     if (nameExists) {
-      return NextResponse.json(
-        { success: false, error: `A student named "${nameExists.fullName}" is already in the supporters register. Already-listed students cannot register again.` },
+      return secureJson(
+        { success: false, error: `A student named "${nameExists.fullName}" is already listed in the supporters register (${nameExists.course}, ${nameExists.yearOfStudy}). Already listed students cannot register again.` },
         { status: 409 }
       );
     }
@@ -148,25 +136,20 @@ export async function POST(request: Request) {
       id: newId,
       fullName: trimmedName,
       phoneNumber: normalizedPhone,
-      rawPhone: rawPhone || phoneValidation.formatted,
-      course: course.trim(),
-      yearOfStudy: yearOfStudy.trim(),
-      communicationConsent: Boolean(communicationConsent),
+      rawPhone: phoneValidation.formatted,
+      course: rawCourse,
+      yearOfStudy: rawYear,
+      communicationConsent,
       consentTimestamp: new Date().toISOString(),
       registrationDate: new Date().toISOString(),
       status: 'active',
       source: 'Online Supporter Portal',
     };
 
-    // Write to TiDB first (persistent) — this NEVER throws EROFS
+    // Write to TiDB Cloud
     await tidb.addSupporter(newRecord);
 
-    // Also update in-memory local store (best-effort, may fail on EROFS which is fine)
-    try {
-      db.addSupporterToMemory?.(newRecord);
-    } catch (_) { /* ignore local store errors */ }
-
-    return NextResponse.json(
+    return secureJson(
       {
         success: true,
         message: 'Registration successful! Thank you for joining the campaign community.',
@@ -176,6 +159,6 @@ export async function POST(request: Request) {
     );
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return secureJson({ success: false, error: message }, { status: 500 });
   }
 }

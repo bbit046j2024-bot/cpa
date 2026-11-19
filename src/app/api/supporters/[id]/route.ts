@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
 import { tidb } from '@/lib/tidb';
 import { normalizeKenyanPhone } from '@/lib/phone';
+import { secureJson, sanitizeString } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,23 +13,18 @@ export async function GET(
     const params = await Promise.resolve(props.params);
     const id = params?.id;
     if (!id) {
-      return NextResponse.json({ success: false, error: 'Supporter ID is required' }, { status: 400 });
+      return secureJson({ success: false, error: 'Supporter ID is required' }, { status: 400 });
     }
 
-    // Try local cache first, then TiDB
-    let supporter = db.getSupporterById(id);
+    const supporter = await tidb.getSupporterById(id);
     if (!supporter) {
-      const all = await tidb.getSupporters().catch(() => []);
-      supporter = all.find(s => s.id === id);
-    }
-    if (!supporter) {
-      return NextResponse.json({ success: false, error: 'Supporter not found' }, { status: 404 });
+      return secureJson({ success: false, error: 'Supporter not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, supporter });
+    return secureJson({ success: true, supporter });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Server error';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return secureJson({ success: false, error: message }, { status: 500 });
   }
 }
 
@@ -41,31 +36,31 @@ export async function PUT(
     const params = await Promise.resolve(props.params);
     const id = params?.id;
     if (!id) {
-      return NextResponse.json({ success: false, error: 'Supporter ID is required' }, { status: 400 });
+      return secureJson({ success: false, error: 'Supporter ID is required' }, { status: 400 });
     }
 
     const body = await request.json();
 
-    // If phone number is being changed, normalize and validate
     if (body.phoneNumber) {
       const val = normalizeKenyanPhone(body.phoneNumber);
       if (!val.isValid) {
-        return NextResponse.json({ success: false, error: val.error }, { status: 400 });
+        return secureJson({ success: false, error: val.error }, { status: 400 });
       }
       body.phoneNumber = val.normalized;
       body.rawPhone = val.formatted;
     }
 
-    // Update in TiDB first (source of truth)
-    await tidb.updateSupporter(id, body).catch(err => console.error('[TiDB Update Error]:', err));
+    if (body.fullName) body.fullName = sanitizeString(body.fullName, 200);
+    if (body.course) body.course = sanitizeString(body.course, 300);
+    if (body.yearOfStudy) body.yearOfStudy = sanitizeString(body.yearOfStudy, 20);
 
-    // Then update local cache
-    const updated = db.updateSupporter(id, body, body.actorId || 'admin');
+    await tidb.updateSupporter(id, body);
+    const updated = await tidb.getSupporterById(id);
 
-    return NextResponse.json({ success: true, supporter: updated });
+    return secureJson({ success: true, supporter: updated });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Server error';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return secureJson({ success: false, error: message }, { status: 500 });
   }
 }
 
@@ -77,21 +72,13 @@ export async function DELETE(
     const params = await Promise.resolve(props.params);
     const id = params?.id;
     if (!id) {
-      return NextResponse.json({ success: false, error: 'Supporter ID is required' }, { status: 400 });
+      return secureJson({ success: false, error: 'Supporter ID is required' }, { status: 400 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const actorId = searchParams.get('actorId') || 'admin';
-
-    // Delete from TiDB first (source of truth - always works, no EROFS)
     await tidb.deleteSupporter(id);
-
-    // Also remove from local in-memory cache (best-effort)
-    db.deleteSupporter(id, actorId);
-
-    return NextResponse.json({ success: true, message: 'Supporter record deleted successfully' });
+    return secureJson({ success: true, message: 'Supporter record deleted successfully' });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Server error';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return secureJson({ success: false, error: message }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { tidb } from '@/lib/tidb';
+import { secureJson } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,15 +9,23 @@ export async function POST(request: Request) {
     const { currentPassword, newPassword } = await request.json();
 
     if (!currentPassword || !newPassword) {
-      return NextResponse.json(
+      return secureJson(
         { success: false, error: 'Both current password and new password are required' },
         { status: 400 }
       );
     }
 
-    if (newPassword.length < 4) {
-      return NextResponse.json(
-        { success: false, error: 'New password must be at least 4 characters long' },
+    if (typeof newPassword !== 'string' || newPassword.length < 6) {
+      return secureJson(
+        { success: false, error: 'New password must be at least 6 characters long' },
+        { status: 400 }
+      );
+    }
+
+    // Reject passwords that are obviously weak
+    if (['password', '123456', 'admin', 'cpa2026'].includes(newPassword.toLowerCase()) && newPassword === currentPassword) {
+      return secureJson(
+        { success: false, error: 'New password must be different from your current password' },
         { status: 400 }
       );
     }
@@ -24,7 +33,8 @@ export async function POST(request: Request) {
     // Verify current password directly from TiDB (source of truth)
     const storedPassword = await tidb.getAdminPassword();
     if (currentPassword !== storedPassword) {
-      return NextResponse.json(
+      await new Promise(r => setTimeout(r, 400)); // brute-force delay
+      return secureJson(
         { success: false, error: 'Current password does not match existing records' },
         { status: 401 }
       );
@@ -33,12 +43,12 @@ export async function POST(request: Request) {
     // Save new password directly to TiDB
     await tidb.setAdminPassword(newPassword);
 
-    return NextResponse.json({
+    return secureJson({
       success: true,
       message: 'Administrator password changed successfully.',
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Server error';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return secureJson({ success: false, error: message }, { status: 500 });
   }
 }

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { db } from '@/lib/db';
 import {
   FileText,
   Download,
@@ -155,7 +154,7 @@ export default function ReportsPage() {
                 Foundation Seed
               </span>
               <span className="font-heading font-extrabold text-2xl text-campaign-cpaBlue">
-                25
+                {stats.foundationCount || 25}
               </span>
               <span className="text-[10px] text-campaign-muted block mt-1">From Official Register</span>
             </div>
