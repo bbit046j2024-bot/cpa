@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, CheckCircle2, Plus, Trash2, ShieldAlert, AlertCircle, Loader2 } from 'lucide-react';
+import { Settings, Save, CheckCircle2, Plus, Trash2, ShieldAlert, AlertCircle, Loader2, Lock, KeyRound } from 'lucide-react';
 
 export default function SettingsPage() {
   const [candidateName, setCandidateName] = useState('Elisha Adera');
@@ -18,6 +18,55 @@ export default function SettingsPage() {
   const [savedNotice, setSavedNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Password changer states
+  const [currPassword, setCurrPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMsg, setPasswordMsg] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordMsg(null);
+
+    if (!currPassword || !newPassword || !confirmPassword) {
+      setPasswordMsg({ type: 'error', text: 'All password fields are required.' });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordMsg({ type: 'error', text: 'New passwords do not match.' });
+      return;
+    }
+
+    if (newPassword.length < 4) {
+      setPasswordMsg({ type: 'error', text: 'New password must be at least 4 characters.' });
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword: currPassword, newPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to update password');
+      }
+
+      setPasswordMsg({ type: 'success', text: 'Administrator password updated successfully!' });
+      setCurrPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: unknown) {
+      setPasswordMsg({ type: 'error', text: err instanceof Error ? err.message : 'Error changing password' });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
   // Load live settings from the backend API
   useEffect(() => {
@@ -363,6 +412,91 @@ export default function SettingsPage() {
                   className="w-full px-3 py-2 bg-gray-100 border border-campaign-border rounded-xl font-medium text-gray-500"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Portal Security & Administrator Password Changer */}
+          <div className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 bg-campaign-lightGreen text-campaign-primaryGreen rounded-xl flex items-center justify-center">
+                <Lock className="w-5 h-5 text-campaign-primaryGreen" />
+              </div>
+              <div>
+                <h3 className="font-heading font-bold text-base text-campaign-deepGreen">
+                  Administrator Portal Password
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Update your admin credential used to access the campaign back-office
+                </p>
+              </div>
+            </div>
+
+            {passwordMsg && (
+              <div
+                className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
+                  passwordMsg.type === 'success'
+                    ? 'bg-green-50 border-green-200 text-green-800'
+                    : 'bg-red-50 border-red-200 text-red-800'
+                }`}
+              >
+                {passwordMsg.type === 'success' ? (
+                  <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                )}
+                <span>{passwordMsg.text}</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div>
+                <label className="block font-bold uppercase tracking-wider text-campaign-darkText mb-1">
+                  Current Password
+                </label>
+                <input
+                  type="password"
+                  value={currPassword}
+                  onChange={(e) => setCurrPassword(e.target.value)}
+                  placeholder="Enter current password"
+                  className="w-full px-3 py-2 bg-campaign-lightBg border border-campaign-border rounded-xl text-xs font-medium"
+                />
+              </div>
+              <div>
+                <label className="block font-bold uppercase tracking-wider text-campaign-darkText mb-1">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="New password (min. 4 chars)"
+                  className="w-full px-3 py-2 bg-campaign-lightBg border border-campaign-border rounded-xl text-xs font-medium"
+                />
+              </div>
+              <div>
+                <label className="block font-bold uppercase tracking-wider text-campaign-darkText mb-1">
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter new password"
+                  className="w-full px-3 py-2 bg-campaign-lightBg border border-campaign-border rounded-xl text-xs font-medium"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                disabled={changingPassword || !currPassword || !newPassword}
+                onClick={handlePasswordUpdate}
+                className="px-4 py-2 bg-campaign-deepGreen hover:bg-black text-white text-xs font-bold rounded-xl shadow transition-all active:scale-95 disabled:opacity-40 flex items-center gap-1.5"
+              >
+                <KeyRound className="w-3.5 h-3.5 text-campaign-gold" />
+                <span>{changingPassword ? 'Updating...' : 'Update Password'}</span>
+              </button>
             </div>
           </div>
 
