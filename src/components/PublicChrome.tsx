@@ -16,7 +16,7 @@ export default function PublicChrome({
   return (
     <>
       {!isAdmin && <Navbar />}
-      <main className={isAdmin ? '' : 'flex-1 pb-16 md:pb-0'}>
+      <main className={isAdmin ? 'w-full max-w-full' : 'flex-1 w-full max-w-full overflow-x-hidden pb-24 md:pb-0'}>
         {children}
       </main>
       {!isAdmin && <Footer />}

@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { db } from '@/lib/db';
 import {
   Award,
@@ -18,7 +19,7 @@ export default function HomePage() {
   const settings = db.getSettings();
 
   return (
-    <div className="space-y-12 sm:space-y-24 pb-20 sm:pb-24">
+    <div className="w-full max-w-full overflow-x-hidden space-y-12 sm:space-y-24 pb-20 sm:pb-24">
 
       {/* 1. HERO SECTION WITH POSTER IMAGE AS BACKGROUND */}
       <section className="relative overflow-hidden text-white min-h-[580px] sm:min-h-[640px] lg:min-h-[720px] flex items-center">
@@ -70,8 +71,14 @@ export default function HomePage() {
 
             {/* Campaign Alliance Motto */}
             <div className="flex items-center justify-center sm:justify-start gap-3 pt-1">
-              <div className="w-10 h-10 rounded-xl bg-white p-1 shadow flex-shrink-0 border border-white/20">
-                <img src="/images/cpa-logo.png" alt="CPA Logo" className="w-full h-full object-contain" />
+              <div className="w-10 h-10 min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-xl bg-white p-1 shadow flex-shrink-0 border border-white/20 flex items-center justify-center overflow-hidden">
+                <Image
+                  src="/images/cpa-logo.png"
+                  alt="CPA Logo"
+                  width={36}
+                  height={36}
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div className="text-left">
                 <p className="text-[10px] sm:text-[11px] text-gray-300 font-medium uppercase tracking-wider">Campaign Identity</p>
@@ -143,16 +150,22 @@ export default function HomePage() {
           </div>
 
           {/* Right Alliance Identity Card */}
-          <div className="lg:col-span-6 bg-gradient-to-br from-white to-campaign-lightBg rounded-2xl sm:rounded-3xl p-5 sm:p-8 border border-campaign-border shadow-md sm:shadow-xl">
+          <div className="lg:col-span-6 bg-gradient-to-br from-white to-campaign-lightBg rounded-2xl sm:rounded-3xl p-5 sm:p-8 border border-campaign-border shadow-md sm:shadow-xl overflow-hidden">
             <div className="flex items-center gap-3.5 sm:gap-4 mb-4 sm:mb-6">
-              <div className="w-13 h-13 sm:w-16 sm:h-16 bg-white rounded-xl sm:rounded-2xl p-2 shadow-sm border border-campaign-border flex-shrink-0 flex items-center justify-center">
-                <img src="/images/cpa-logo.png" alt="CPA Logo" className="w-full h-full object-contain" />
+              <div className="w-14 h-14 sm:w-16 sm:h-16 min-w-[56px] min-h-[56px] max-w-[64px] max-h-[64px] bg-white rounded-xl sm:rounded-2xl p-1.5 sm:p-2 shadow-sm border border-campaign-border flex-shrink-0 flex items-center justify-center overflow-hidden">
+                <Image
+                  src="/images/cpa-logo.png"
+                  alt="CPA Logo"
+                  width={64}
+                  height={64}
+                  className="w-full h-full object-contain"
+                />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <span className="text-[11px] sm:text-xs font-bold text-campaign-gold uppercase tracking-wider block">
                   Campaign Alliance
                 </span>
-                <h3 className="font-heading font-extrabold text-lg sm:text-2xl text-campaign-deepGreen leading-tight">
+                <h3 className="font-heading font-extrabold text-lg sm:text-2xl text-campaign-deepGreen leading-tight truncate">
                   Comrades Project Alliance (CPA)
                 </h3>
                 <p className="text-xs text-campaign-muted font-medium mt-0.5">

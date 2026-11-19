@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Menu, X, UserCheck, ShieldCheck, GraduationCap } from 'lucide-react';
 
@@ -19,10 +20,12 @@ export default function Navbar() {
           {/* Left: Logos & Candidate Identity */}
           <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group min-w-0">
             {/* CPA Logo */}
-            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-white p-1 border border-gray-200 shadow-xs flex-shrink-0 flex items-center justify-center overflow-hidden">
-              <img
+            <div className="w-9 h-9 sm:w-11 sm:h-11 min-w-[36px] min-h-[36px] max-w-[44px] max-h-[44px] rounded-xl bg-white p-1 border border-gray-200 shadow-xs flex-shrink-0 flex items-center justify-center overflow-hidden">
+              <Image
                 src="/images/cpa-logo.png"
                 alt="CPA Logo"
+                width={36}
+                height={36}
                 className="w-full h-full object-contain"
               />
             </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { db } from '@/lib/db';
 import RegistrationForm from '@/components/RegistrationForm';
 import { ShieldCheck, CheckCircle2, GraduationCap } from 'lucide-react';
@@ -37,8 +38,14 @@ export default function RegisterPage() {
 
             {/* Campaign Identity */}
             <div className="bg-white rounded-2xl p-4 sm:p-5 border border-campaign-border shadow-xs text-center space-y-2">
-              <div className="w-12 h-12 mx-auto">
-                <img src="/images/cpa-logo.png" alt="CPA Logo" className="w-full h-full object-contain" />
+              <div className="w-12 h-12 min-w-[48px] min-h-[48px] max-w-[48px] max-h-[48px] mx-auto flex items-center justify-center overflow-hidden">
+                <Image
+                  src="/images/cpa-logo.png"
+                  alt="CPA Logo"
+                  width={48}
+                  height={48}
+                  className="w-full h-full object-contain"
+                />
               </div>
               <h4 className="font-heading font-bold text-xs text-campaign-deepGreen">
                 Comrades Project Alliance (CPA)

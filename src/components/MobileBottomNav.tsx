@@ -15,21 +15,21 @@ export default function MobileBottomNav() {
   return (
     <nav
       aria-label="Mobile Bottom Navigation"
-      className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/98 backdrop-blur-md border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
+      className="md:hidden fixed bottom-0 inset-x-0 w-full z-50 bg-white/98 backdrop-blur-md border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
       style={{ paddingBottom: 'max(0.4rem, env(safe-area-inset-bottom, 0px))' }}
     >
-      <div className="w-full flex items-center justify-between px-3 py-1.5 max-w-md mx-auto">
+      <div className="grid grid-cols-3 items-center justify-items-center w-full max-w-sm mx-auto px-2 py-1.5">
         {/* 1. Home */}
         <Link
           href="/"
-          className={`flex-1 flex flex-col items-center justify-center py-1 transition-all rounded-xl ${
+          className={`w-full flex flex-col items-center justify-center py-1 transition-all rounded-xl ${
             isHome
               ? 'text-campaign-deepGreen font-bold'
               : 'text-gray-400 hover:text-campaign-deepGreen'
           }`}
         >
           <div
-            className={`w-9 h-8 flex items-center justify-center rounded-xl transition-all ${
+            className={`w-10 h-8 flex items-center justify-center rounded-xl transition-all ${
               isHome
                 ? 'bg-campaign-lightGreen text-campaign-deepGreen shadow-xs'
                 : 'text-gray-400'
@@ -43,7 +43,7 @@ export default function MobileBottomNav() {
         {/* 2. Register - Prominent Center Action */}
         <Link
           href="/register"
-          className="flex-1 flex flex-col items-center justify-center py-0.5 group"
+          className="w-full flex flex-col items-center justify-center py-0.5 group"
         >
           <div
             className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-md transition-all active:scale-95 border-2 ${
@@ -68,14 +68,14 @@ export default function MobileBottomNav() {
         {/* 3. About Candidate */}
         <Link
           href="/about"
-          className={`flex-1 flex flex-col items-center justify-center py-1 transition-all rounded-xl ${
+          className={`w-full flex flex-col items-center justify-center py-1 transition-all rounded-xl ${
             isAbout
               ? 'text-campaign-deepGreen font-bold'
               : 'text-gray-400 hover:text-campaign-deepGreen'
           }`}
         >
           <div
-            className={`w-9 h-8 flex items-center justify-center rounded-xl transition-all ${
+            className={`w-10 h-8 flex items-center justify-center rounded-xl transition-all ${
               isAbout
                 ? 'bg-campaign-lightGreen text-campaign-deepGreen shadow-xs'
                 : 'text-gray-400'
