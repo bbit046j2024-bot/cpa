@@ -12,7 +12,7 @@ export async function sendBulkSms(
 ): Promise<SendSmsResult> {
   const apiKey = process.env.AT_API_KEY || process.env.AFRICASTALKING_API_KEY;
   const username = process.env.AT_USERNAME || process.env.AFRICASTALKING_USERNAME || 'sandbox';
-  const senderId = process.env.AT_SENDER_ID || process.env.AFRICASTALKING_SENDER_ID || process.env.SMS_SENDER_ID || 'ELISHA2026';
+  const senderId = (process.env.AT_SENDER_ID || process.env.AFRICASTALKING_SENDER_ID || process.env.SMS_SENDER_ID || '').trim();
   const isEnabled = process.env.SMS_ENABLED === 'true';
 
   if (!to || to.length === 0) {
@@ -61,10 +61,18 @@ export async function sendBulkSms(
     });
 
     const data = await response.json();
+    const isInvalidSender = data?.SMSMessageData?.Message === 'InvalidSenderId';
+    const hasRecipients = data?.SMSMessageData?.Recipients && data.SMSMessageData.Recipients.length > 0;
+    const isSuccess = response.ok && !isInvalidSender;
+
     return {
-      success: response.ok,
-      message: response.ok ? 'SMS dispatched successfully' : 'SMS provider dispatch failed',
-      recipientsCount: to.length,
+      success: isSuccess,
+      message: isInvalidSender
+        ? 'Sender ID not registered or approved yet with Kenyan telcos. Omit AT_SENDER_ID to use Africa\'s Talking default sender.'
+        : isSuccess
+        ? (data?.SMSMessageData?.Message || 'SMS dispatched successfully')
+        : (data?.errorMessage || 'SMS provider dispatch failed'),
+      recipientsCount: hasRecipients ? data.SMSMessageData.Recipients.length : to.length,
       data,
     };
   } catch (error: any) {
